@@ -69,13 +69,18 @@ public class SubjectService {
 
         boolean alreadyExists = subjectRepository.existsByProject_IdAndCodeIgnoreCase(request.projectId(), request.code());
 
+        if(alreadyExists) {
+            Subject existing = subjectRepository.findByProject_IdAndCodeIgnoreCase(request.projectId(), request.code())
+                    .orElseThrow(() -> new NotFoundException("Subject_not_found", "Subject not found"));
+            return new SubjectSaveResult(toDto(existing), true);
+        }
         Subject subject = new Subject();
         subject.setProject(project);
         subject.setCode(request.code());
         subject.setSubjectType(subjectType);
         Subject saved = subjectRepository.save(subject);
 
-        return new SubjectSaveResult(toDto(saved), alreadyExists);
+        return new SubjectSaveResult(toDto(saved), false);
     }
 
     @Transactional
@@ -91,12 +96,17 @@ public class SubjectService {
 
         boolean alreadyExists = subjectRepository.existsByProject_IdAndCodeIgnoreCaseAndIdNot(request.projectId(), request.code(), id);
 
+        if(alreadyExists) {
+            Subject existing = subjectRepository.findByProject_IdAndCodeIgnoreCase(request.projectId(), request.code())
+                    .orElseThrow(() -> new NotFoundException("Subject_not_found", "Subject not found"));
+            return new SubjectSaveResult(toDto(existing), true);
+        }
         subject.setProject(project);
         subject.setCode(request.code());
         subject.setSubjectType(subjectType);
         Subject saved = subjectRepository.save(subject);
 
-        return new SubjectSaveResult(toDto(saved), alreadyExists);
+        return new SubjectSaveResult(toDto(saved), false);
     }
 
     @Transactional
