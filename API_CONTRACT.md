@@ -162,7 +162,7 @@ Se non gestisci questo flag rischi soggetti duplicati silenziosi.
 | Metodo | Path | Auth | Body → Risposta |
 |---|---|---|---|
 | GET | `/{id}` | pub | → `RegistrationDto` |
-| GET | `` | pub | → `RegistrationDto[]` |
+| GET | `?projectId=&fromDate=&toDate=&operatorId=&activityId=&domainId=&page=&size=` | pub | → `PagedResponse<RegistrationDto>` |
 | POST | `` | pub | `RegistrationRequest` → `RegistrationDto` (201) |
 | PUT | `/{id}` | **admin** | `RegistrationRequest` → `RegistrationDto` |
 | DELETE | `/{id}` | **admin** | → 204 |
@@ -170,6 +170,12 @@ Se non gestisci questo flag rischi soggetti duplicati silenziosi.
 `operatorIds` max 5 elementi (`@Size(max=5)`), `subjectIds`/`activityIds` non
 vuoti. `PUT`/`DELETE` leggono l'id operatore dal claim `uid` del JWT per l'audit
 log — **richiedono un token valido con quel claim**, non solo un utente generico.
+La lista è paginata lato server: `page` è zero-based (default `0`) e `size` ha
+default `5` e massimo `100`. I filtri sono tutti opzionali e cumulabili; `fromDate`
+e `toDate` sono date ISO inclusive. I risultati sono ordinati per `activityDate`
+decrescente e poi per id decrescente. Una pagina ha la forma
+`{ items: RegistrationDto[], page: number, size: number, total: number, totalPages: number, hasNext: boolean }`.
+Valori non numerici, paginazione non valida e `fromDate > toDate` restituiscono 400.
 
 ### Richieste di modifica (`/api/modification-requests`)
 | Metodo | Path | Auth | Body → Risposta |
@@ -286,9 +292,9 @@ ErrorResponse { timestamp: string; status: number; error: string; code: string; 
 
 ## Cose da sapere prima di iniziare il frontend
 
-1. **Niente paginazione**: tutti i `GET` collection tornano array completi. Se i
-   dati crescono molto (es. `registrations`), tienilo a mente — oggi non c'è
-   nessun parametro `page`/`size` da passare.
+1. **Paginazione registrazioni**: soltanto `GET /api/registrations` restituisce
+   una pagina anziché un array. Invia `page` e `size` quando navighi tra le pagine
+   e usa `items` per la lista visualizzata.
 2. **Date**: `LocalDate` serializza come `"YYYY-MM-DD"`, `LocalDateTime` come ISO
    senza timezone (es. `"2026-08-31T10:15:00.123"`) — nessun timezone esplicito,
    trattale come locali.
