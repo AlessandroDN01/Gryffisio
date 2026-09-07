@@ -1,20 +1,26 @@
 package org.generation.italy.services;
 
+import org.generation.italy.model.dto.PagedResponse;
 import org.generation.italy.model.dto.RegistrationDto;
 import org.generation.italy.model.dto.RegistrationRequest;
 import org.generation.italy.model.entities.*;
+import org.generation.italy.model.exceptions.BadRequestException;
 import org.generation.italy.model.exceptions.NotFoundException;
 import org.generation.italy.model.repositories.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Service
 public class RegistrationService {
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final RegistrationRepository registrationRepository;
     private final ProjectRepository projectRepository;
     private final DomainRepository domainRepository;
@@ -68,10 +74,24 @@ public class RegistrationService {
     }
 
     @Transactional(readOnly = true)
-    public List<RegistrationDto> findAll() {
-        return registrationRepository.findAll().stream()
-                .map(this::toDto)
-                .toList();
+    public PagedResponse<RegistrationDto> findAll(
+            Integer projectId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Integer operatorId,
+            Integer activityId,
+            Integer domainId,
+            int page,
+            int size
+    ) {
+        validateFilters(fromDate, toDate, page, size);
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(
+                Sort.Order.desc("activityDate"),
+                Sort.Order.desc("id")
+        ));
+        return PagedResponse.from(registrationRepository.findFiltered(
+                        projectId, fromDate, toDate, operatorId, activityId, domainId, pageable)
+                .map(this::toDto));
     }
 
     @Transactional(readOnly = true)
@@ -160,5 +180,20 @@ public class RegistrationService {
                 .orElseThrow(() -> new NotFoundException("Operator_not_found", "Operator not found: " + adminId));
         auditLogService.log(Set.of(admin), "DELETE", "Registration", id, "Registration deleted by admin");
         registrationRepository.deleteById(id);
+    }
+
+    private void validateFilters(LocalDate fromDate, LocalDate toDate, int page, int size) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new BadRequestException("INVALID_DATE_RANGE", "fromDate cannot be after toDate");
+        }
+        if (page < 0) {
+            throw new BadRequestException("Invalid_pagination", "page must be greater than or equal to 0");
+        }
+        if (size <= 0 || size > MAX_PAGE_SIZE) {
+            throw new BadRequestException(
+                    "Invalid_pagination",
+                    "size must be greater than 0 and no greater than " + MAX_PAGE_SIZE
+            );
+        }
     }
 }

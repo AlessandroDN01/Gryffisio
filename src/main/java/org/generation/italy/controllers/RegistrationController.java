@@ -1,6 +1,7 @@
 package org.generation.italy.controllers;
 
 import jakarta.validation.Valid;
+import org.generation.italy.model.dto.PagedResponse;
 import org.generation.italy.model.dto.RegistrationDto;
 import org.generation.italy.model.dto.RegistrationRequest;
 import org.generation.italy.model.exceptions.BadRequestException;
@@ -11,12 +12,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/registrations")
@@ -37,8 +39,18 @@ public class RegistrationController {
     }
 
     @GetMapping
-    public List<RegistrationDto> getAll() {
-        return registrationService.findAll();
+    public PagedResponse<RegistrationDto> getAll(
+            @RequestParam(required = false) Integer projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) Integer operatorId,
+            @RequestParam(required = false) Integer activityId,
+            @RequestParam(required = false) Integer domainId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return registrationService.findAll(
+                projectId, fromDate, toDate, operatorId, activityId, domainId, page, size);
     }
 
     @PostMapping
