@@ -119,7 +119,7 @@ public class RegistrationExportService {
 
     public byte[] exportCsv() {
         // registrazioni ordinate per id crescente
-        List<Registration> registrations = registrationRepository.findAll(Sort.by("id"));
+        List<Registration> registrations = registrationRepository.findAllByOrderByIdAsc();
 
         try (StringWriter writer = new StringWriter();
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSV_FORMAT)) {

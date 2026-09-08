@@ -3,6 +3,7 @@ package org.generation.italy.model.repositories;
 import org.generation.italy.model.entities.Registration;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +12,17 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface RegistrationRepository extends JpaRepository<Registration, Long> {
+    @EntityGraph(attributePaths = {
+            "domain",
+            "project",
+            "session",
+            "doctor",
+            "subjects",
+            "subjects.subjectType",
+            "operators",
+            "activities"
+    })
+    List<Registration> findAllByOrderByIdAsc();
     @Query("""
         SELECT r
         FROM Registration r
