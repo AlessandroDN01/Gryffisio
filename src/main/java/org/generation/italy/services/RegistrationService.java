@@ -81,6 +81,7 @@ public class RegistrationService {
             Integer operatorId,
             Integer activityId,
             Integer domainId,
+            String search,
             int page,
             int size
     ) {
@@ -90,7 +91,7 @@ public class RegistrationService {
                 Sort.Order.desc("id")
         ));
         return PagedResponse.from(registrationRepository.findFiltered(
-                        projectId, fromDate, toDate, operatorId, activityId, domainId, pageable)
+                        projectId, fromDate, toDate, operatorId, activityId, domainId, search, pageable)
                 .map(this::toDto));
     }
 
