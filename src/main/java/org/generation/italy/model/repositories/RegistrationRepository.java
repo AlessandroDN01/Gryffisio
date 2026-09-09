@@ -56,15 +56,25 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 
         FROM Registration r JOIN r.operators o
         WHERE (:projectId IS NULL OR r.project.id = :projectId)
-          AND r.activityDate >= COALESCE(:fromDate, r.activityDate)
-          AND r.activityDate <= COALESCE(:toDate, r.activityDate)
+          AND (:domainId IS NULL OR r.domain.id = :domainId)
+          AND (:operatorId IS NULL OR o.id = :operatorId)
+          AND (:activityId IS NULL OR EXISTS (
+             SELECT a
+             FROM r.activities a
+             WHERE a.id = :activityId
+          ))
+          AND (:fromDate IS NULL OR r.activityDate >= :fromDate)
+          AND (:toDate IS NULL OR r.activityDate <= :toDate)
         GROUP BY o.id, o.firstName, o.lastName
         ORDER BY o.lastName, o.firstName
     """)
     List<OperatorMetricsProjection> findOperationMatricsFiltered(
            @Param("projectId") Integer projectId,
            @Param("fromDate") LocalDate fromDate,
-           @Param("toDate") LocalDate toDate
+           @Param("toDate") LocalDate toDate,
+           @Param("operatorId") Integer operatorId,
+           @Param("activityId") Integer activityId,
+           @Param("domainId") Integer domainId
     );
 
     @Query("""
@@ -81,15 +91,25 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 
         FROM Registration r JOIN r.activities a
         WHERE (:projectId IS NULL OR r.project.id = :projectId)
-          AND r.activityDate >= COALESCE(:fromDate, r.activityDate)
-          AND r.activityDate <= COALESCE(:toDate, r.activityDate)
+          AND (:domainId IS NULL OR r.domain.id = :domainId)
+          AND (:operatorId IS NULL OR EXISTS (
+             SELECT op
+             FROM r.operators op
+             WHERE op.id = :operatorId
+          ))
+          AND (:activityId IS NULL OR a.id = :activityId)
+          AND (:fromDate IS NULL OR r.activityDate >= :fromDate)
+          AND (:toDate IS NULL OR r.activityDate <= :toDate)
         GROUP BY a.id, a.name
         ORDER BY a.name
     """)
     List<ActivityMetricsProjection> findActivityMatricsFiltered(
            @Param("projectId") Integer projectId,
            @Param("fromDate") LocalDate fromDate,
-           @Param("toDate") LocalDate toDate
+           @Param("toDate") LocalDate toDate,
+           @Param("operatorId") Integer operatorId,
+           @Param("activityId") Integer activityId,
+           @Param("domainId") Integer domainId
     );
 
     @Query("""
@@ -100,6 +120,60 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
         ORDER BY a.name
     """)
     List<ActivityMetricsProjection> findActivityMatrics();
+
+    @Query("""
+        SELECT COUNT(r)
+        FROM Registration r
+        WHERE (:projectId IS NULL OR r.project.id = :projectId)
+          AND (:domainId IS NULL OR r.domain.id = :domainId)
+          AND (:operatorId IS NULL OR EXISTS (
+              SELECT op
+              FROM r.operators op
+              WHERE op.id = :operatorId
+          ))
+          AND (:activityId IS NULL OR EXISTS (
+              SELECT a
+              FROM r.activities a
+              WHERE a.id = :activityId
+          ))
+          AND (:fromDate IS NULL OR r.activityDate >= :fromDate)
+          AND (:toDate IS NULL OR r.activityDate <= :toDate)
+    """)
+    long countFiltered(
+            @Param("projectId") Integer projectId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("operatorId") Integer operatorId,
+            @Param("activityId") Integer activityId,
+            @Param("domainId") Integer domainId
+    );
+
+    @Query("""
+        SELECT COALESCE(SUM(r.durationMinutes), 0)
+        FROM Registration r
+        WHERE (:projectId IS NULL OR r.project.id = :projectId)
+          AND (:domainId IS NULL OR r.domain.id = :domainId)
+          AND (:operatorId IS NULL OR EXISTS (
+              SELECT op
+              FROM r.operators op
+              WHERE op.id = :operatorId
+          ))
+          AND (:activityId IS NULL OR EXISTS (
+              SELECT a
+              FROM r.activities a
+              WHERE a.id = :activityId
+          ))
+          AND (:fromDate IS NULL OR r.activityDate >= :fromDate)
+          AND (:toDate IS NULL OR r.activityDate <= :toDate)
+    """)
+    long sumDurationMinutesFiltered(
+            @Param("projectId") Integer projectId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("operatorId") Integer operatorId,
+            @Param("activityId") Integer activityId,
+            @Param("domainId") Integer domainId
+    );
 
     long countByProject_Id (Integer projectId);
 

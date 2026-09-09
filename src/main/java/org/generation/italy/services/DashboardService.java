@@ -21,13 +21,14 @@ public class DashboardService {
     }
 
     @Transactional(readOnly = true)
-    public DashboardDto getDashboard(Integer projectId, LocalDate fromDate, LocalDate toDate) {
+    public DashboardDto getDashboard(Integer projectId, Integer operatorId, LocalDate fromDate, LocalDate toDate, Integer activityId, Integer domainId) {
         validateDateRange(fromDate, toDate);
 
-        long total = countRegistrations(projectId, fromDate, toDate);
-        Long projectCount = projectId != null ? total : null;
+        long totalRegistrations = registrationRepository.countFiltered(projectId, fromDate, toDate, operatorId, activityId, domainId);
+        long totalMinutes = registrationRepository.sumDurationMinutesFiltered(projectId, fromDate, toDate, operatorId, activityId, domainId);
+        Long projectCount = projectId != null ? totalRegistrations : null;
 
-        List<ActivityMatricsDto> activityMatrics = registrationRepository.findActivityMatricsFiltered(projectId, fromDate, toDate).stream()
+        List<ActivityMatricsDto> activityMatrics = registrationRepository.findActivityMatricsFiltered(projectId, fromDate, toDate, operatorId, activityId, domainId).stream()
                 .map(row -> new ActivityMatricsDto(
                         row.getActivityId(),
                         row.getActivityName(),
@@ -35,7 +36,7 @@ public class DashboardService {
                         minutesToHours(row.getTotalMinutes())
                 ))
                 .toList();
-        List<OperatorMatricsDto> operatorMatrics = registrationRepository.findOperationMatricsFiltered(projectId, fromDate, toDate).stream()
+        List<OperatorMatricsDto> operatorMatrics = registrationRepository.findOperationMatricsFiltered(projectId, fromDate, toDate, operatorId, activityId, domainId).stream()
                 .map(row -> new OperatorMatricsDto(
                         row.getOperatorId(),
                         row.getOperatorName(),
@@ -43,39 +44,8 @@ public class DashboardService {
                         minutesToHours(row.getTotalMinutes())
                 ))
                 .toList();
-        return new DashboardDto(total,projectCount,operatorMatrics,activityMatrics);
-    }
 
-    private long countRegistrations(Integer projectId, LocalDate fromDate, LocalDate toDate) {
-        if (projectId == null && fromDate == null && toDate == null) {
-            return registrationRepository.count();
-        }
-
-        if (projectId != null && fromDate == null && toDate == null) {
-            return registrationRepository.countByProject_Id(projectId);
-        }
-
-        if (projectId != null && fromDate != null && toDate != null) {
-            return registrationRepository.countByProject_IdAndActivityDateBetween(projectId, fromDate, toDate);
-        }
-
-        if (projectId == null && fromDate != null && toDate != null) {
-            return registrationRepository.countByActivityDateBetween(fromDate, toDate);
-        }
-
-        if (projectId != null && fromDate != null) {
-            return registrationRepository.countByProject_IdAndActivityDateGreaterThanEqual(projectId, fromDate);
-        }
-
-        if (projectId != null) {
-            return registrationRepository.countByProject_IdAndActivityDateLessThanEqual(projectId, toDate);
-        }
-
-        if (fromDate != null) {
-            return registrationRepository.countByActivityDateGreaterThanEqual(fromDate);
-        }
-
-        return registrationRepository.countByActivityDateLessThanEqual(toDate);
+        return new DashboardDto(totalRegistrations, projectCount, operatorMatrics, activityMatrics, minutesToHours(totalMinutes));
     }
 
     private void validateDateRange(LocalDate fromDate, LocalDate toDate) {

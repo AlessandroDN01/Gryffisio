@@ -19,11 +19,14 @@ public class DashboardController {
         this.dashboardService = dashboardService;
     }
     @GetMapping
-    public DashboardDto getDashboard (
+    public DashboardDto getDashboard(
             @RequestParam(required = false) Integer projectId,
+            @RequestParam(required = false) Integer operatorId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate){
-        return dashboardService.getDashboard(projectId, fromDate, toDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) Integer activityId,
+            @RequestParam(required = false) Integer domainId) {
+        return dashboardService.getDashboard(projectId, operatorId, fromDate, toDate, activityId, domainId);
     }
 }
 

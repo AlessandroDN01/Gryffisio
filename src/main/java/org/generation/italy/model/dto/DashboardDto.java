@@ -6,5 +6,6 @@ public record DashboardDto(
         long totalRegistrations,
         Long selectProjectRegistration,
         List<OperatorMatricsDto> operatorMatrics,
-        List<ActivityMatricsDto> activityMatrics
+        List<ActivityMatricsDto> activityMatrics,
+        double totalHours
 ) {}
