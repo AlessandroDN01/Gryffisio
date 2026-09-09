@@ -46,11 +46,12 @@ public class RegistrationController {
             @RequestParam(required = false) Integer operatorId,
             @RequestParam(required = false) Integer activityId,
             @RequestParam(required = false) Integer domainId,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
         return registrationService.findAll(
-                projectId, fromDate, toDate, operatorId, activityId, domainId, page, size);
+                projectId, fromDate, toDate, operatorId, activityId, domainId, search, page, size);
     }
 
     @PostMapping

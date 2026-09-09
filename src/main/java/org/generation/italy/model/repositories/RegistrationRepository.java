@@ -40,6 +40,26 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
               FROM r.activities a
               WHERE a.id = :activityId
            ))
+               AND (
+                    :search IS NULL
+                    OR LOWER(r.project.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                    OR LOWER(r.domain.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                    OR LOWER(r.session.session) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                    OR LOWER(CONCAT(r.doctor.firstName, ' ', r.doctor.lastName))
+                       LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                    OR EXISTS (
+                        SELECT opSearch
+                        FROM r.operators opSearch
+                        WHERE LOWER(CONCAT(opSearch.firstName, ' ', opSearch.lastName))
+                              LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                    )
+                    OR EXISTS (
+                        SELECT subSearch
+                        FROM r.subjects subSearch
+                        WHERE CAST(subSearch.id AS string)
+                              LIKE CONCAT('%', CAST(:search AS string), '%')
+                    )
+                )
     """)
     Page<Registration> findFiltered(
            @Param("projectId") Integer projectId,
@@ -48,6 +68,7 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
            @Param("operatorId") Integer operatorId,
            @Param("activityId") Integer activityId,
            @Param("domainId") Integer domainId,
+           @Param("search") String search,
            Pageable pageable
     );
 
