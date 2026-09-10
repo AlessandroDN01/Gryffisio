@@ -7,6 +7,7 @@ import org.generation.italy.model.entities.*;
 import org.generation.italy.model.exceptions.BadRequestException;
 import org.generation.italy.model.exceptions.NotFoundException;
 import org.generation.italy.model.repositories.*;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class RegistrationService {
@@ -90,9 +94,30 @@ public class RegistrationService {
                 Sort.Order.desc("activityDate"),
                 Sort.Order.desc("id")
         ));
-        return PagedResponse.from(registrationRepository.findFiltered(
-                        projectId, fromDate, toDate, operatorId, activityId, domainId, search, pageable)
-                .map(this::toDto));
+        Page<Registration> filteredPage = registrationRepository.findFiltered(
+                projectId, fromDate, toDate, operatorId, activityId, domainId, search, pageable);
+
+        List<Long> pageIds = filteredPage.getContent().stream()
+                .map(Registration::getId)
+                .toList();
+
+        List<Registration> fullyLoaded = registrationRepository.findByIdIn(pageIds);
+
+        Map<Long, Registration> byId = fullyLoaded.stream()
+                .collect(Collectors.toMap(Registration::getId, r -> r));
+
+        List<RegistrationDto> orderedDtos = filteredPage.getContent().stream()
+                .map(r -> toDto(byId.get(r.getId())))
+                .toList();
+
+        return new PagedResponse<>(
+                orderedDtos,
+                filteredPage.getNumber(),
+                filteredPage.getSize(),
+                filteredPage.getTotalElements(),
+                filteredPage.getTotalPages(),
+                filteredPage.hasNext()
+        );
     }
 
     @Transactional(readOnly = true)

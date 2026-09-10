@@ -22,6 +22,18 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             "operators",
             "activities"
     })
+    List<Registration> findByIdIn(List<Long> ids);
+
+    @EntityGraph(attributePaths = {
+            "domain",
+            "project",
+            "session",
+            "doctor",
+            "subjects",
+            "subjects.subjectType",
+            "operators",
+            "activities"
+    })
     List<Registration> findAllByOrderByIdAsc();
     @Query("""
         SELECT r
