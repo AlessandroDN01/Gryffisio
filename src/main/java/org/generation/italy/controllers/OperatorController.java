@@ -32,6 +32,11 @@ public class OperatorController {
         return operatorService.findAll();
     }
 
+    @GetMapping("/firstNameLastName")
+    public List<OperatorDto> findByFirstNameOrLastName(@RequestParam(required = false) String firstName, @RequestParam(required = false) String lastName) {
+        return operatorService.findByFirstNameOrLastName(firstName, lastName);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")

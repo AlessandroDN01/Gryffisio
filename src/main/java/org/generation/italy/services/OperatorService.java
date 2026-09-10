@@ -56,6 +56,13 @@ public class OperatorService {
         return toDto(operator);
     }
 
+    @Transactional(readOnly = true)
+    public List<OperatorDto> findByFirstNameOrLastName(String firstName, String lastName) {
+       return operatorRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(firstName, lastName).stream()
+               .map(this::toDto)
+               .toList();
+    }
+
     @Transactional
     public OperatorDto createOperator(CreateUserRequest request) {
         if (operatorRepository.existsByEmailIgnoreCase(request.email())) {
