@@ -11,6 +11,7 @@ import org.generation.italy.model.repositories.DomainRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -83,9 +84,9 @@ public class DomainService {
 
     private Set<Activity> resolveActivities(List<Integer> activityIds) throws NotFoundException {
         if (activityIds == null || activityIds.isEmpty()) {
-            return Set.of();
+            return new HashSet<>();
         }
-        Set<Activity> activities = Set.copyOf(activityRepository.findAllById(activityIds));
+        Set<Activity> activities = new HashSet<>(activityRepository.findAllById(activityIds));
         if (activities.size() != Set.copyOf(activityIds).size()) {
             throw new NotFoundException("Activity_not_found", "One or more activity ids do not exist");
         }
