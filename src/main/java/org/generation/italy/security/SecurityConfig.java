@@ -80,7 +80,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Cataloghi: lettura pubblica, scrittura solo admin
                         .requestMatchers(HttpMethod.GET, "/api/domains/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/projects/**").permitAll()
