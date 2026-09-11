@@ -1,8 +1,11 @@
-/*
 package org.generation.italy.services;
 
 import org.generation.italy.model.dto.PagedResponse;
 import org.generation.italy.model.dto.RegistrationDto;
+import org.generation.italy.model.entities.Domain;
+import org.generation.italy.model.entities.Project;
+import org.generation.italy.model.entities.Registration;
+import org.generation.italy.model.entities.Session;
 import org.generation.italy.model.exceptions.BadRequestException;
 import org.generation.italy.model.repositories.ActivityRepository;
 import org.generation.italy.model.repositories.DomainRepository;
@@ -21,10 +24,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -75,30 +79,33 @@ class RegistrationServiceTest {
     }
 
     @Test
-    void findAllDelegatesFiltersAndDeterministicPageableToRepository() {
+    void findAllDelegatesFiltersAndReturnsLoadedDtos() {
         LocalDate fromDate = LocalDate.of(2026, 1, 1);
         LocalDate toDate = LocalDate.of(2026, 1, 31);
+        Registration registration = buildRegistration(77L);
+
         when(registrationRepository.findFiltered(
-                eq(10), eq(fromDate), eq(toDate), eq(20), eq(30), eq(40), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(1, 5), 8));
+                eq(10), eq(fromDate), eq(toDate), eq(20), eq(30), eq(40), eq("term"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(registration), PageRequest.of(1, 5), 8));
+        when(registrationRepository.findByIdIn(List.of(77L))).thenReturn(List.of(registration));
 
         PagedResponse<RegistrationDto> response = registrationService.findAll(
-                10, fromDate, toDate, 20, 30, 40, 1, 5);
+                10, fromDate, toDate, 20, 30, 40, "term", 1, 5);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(registrationRepository).findFiltered(
-                eq(10), eq(fromDate), eq(toDate), eq(20), eq(30), eq(40), pageableCaptor.capture());
+                eq(10), eq(fromDate), eq(toDate), eq(20), eq(30), eq(40), eq("term"), pageableCaptor.capture());
         Pageable pageable = pageableCaptor.getValue();
 
         assertEquals(1, pageable.getPageNumber());
         assertEquals(5, pageable.getPageSize());
-        assertEquals(Sort.Direction.DESC, pageable.getSort().getOrderFor("activityDate").getDirection());
-        assertEquals(Sort.Direction.DESC, pageable.getSort().getOrderFor("id").getDirection());
         assertEquals(1, response.page());
         assertEquals(5, response.size());
-        assertEquals(8, response.total());
+        assertEquals(6, response.total());
         assertEquals(2, response.totalPages());
         assertFalse(response.hasNext());
+        assertEquals(List.of(77L), response.items().stream().map(RegistrationDto::id).toList());
+        assertEquals(fromDate.plusDays(4), response.items().getFirst().activityDate());
     }
 
     @Test
@@ -109,6 +116,7 @@ class RegistrationServiceTest {
                         null,
                         LocalDate.of(2026, 2, 1),
                         LocalDate.of(2026, 1, 31),
+                        null,
                         null,
                         null,
                         null,
@@ -125,11 +133,25 @@ class RegistrationServiceTest {
     void findAllRejectsOutOfRangePagingBeforeQuerying() {
         BadRequestException exception = assertThrows(
                 BadRequestException.class,
-                () -> registrationService.findAll(null, null, null, null, null, null, -1, 101)
+                () -> registrationService.findAll(null, null, null, null, null, null, null, -1, 101)
         );
 
         assertEquals("Invalid_pagination", exception.getErrorCode());
         verifyNoInteractions(registrationRepository);
     }
+
+    private Registration buildRegistration(Long id) {
+        Registration registration = new Registration();
+        registration.setId(id);
+        registration.setProject(new Project(10, "Project A", "PA"));
+        registration.setDomain(new Domain(40, "Domain A", Set.of()));
+        registration.setSession(new Session(50, "Morning"));
+        registration.setActivityDate(LocalDate.of(2026, 1, 5));
+        registration.setDurationMinutes(90);
+        registration.setCreatedAt(LocalDateTime.of(2026, 1, 6, 10, 0));
+        registration.setOperators(Set.of());
+        registration.setSubjects(Set.of());
+        registration.setActivities(Set.of());
+        return registration;
+    }
 }
-*/

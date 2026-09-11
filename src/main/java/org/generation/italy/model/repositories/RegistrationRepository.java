@@ -40,8 +40,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     FROM Registration r
     LEFT JOIN r.doctor doc
     WHERE (:projectId IS NULL OR r.project.id = :projectId)
-      AND r.activityDate >= COALESCE(:fromDate, r.activityDate)
-      AND r.activityDate <= COALESCE(:toDate, r.activityDate)
+      AND (CAST(:fromDate AS date) IS NULL OR r.activityDate >= :fromDate)
+      AND (CAST(:toDate AS date) IS NULL OR r.activityDate <= :toDate)
       AND (:domainId IS NULL OR r.domain.id = :domainId)
       AND (:operatorId IS NULL OR EXISTS (
           SELECT op
@@ -98,8 +98,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
              FROM r.activities a
              WHERE a.id = :activityId
           ))
-          AND (:fromDate IS NULL OR r.activityDate >= :fromDate)
-          AND (:toDate IS NULL OR r.activityDate <= :toDate)
+          AND (CAST(:fromDate AS date) IS NULL OR r.activityDate >= :fromDate)
+          AND (CAST(:toDate AS date) IS NULL OR r.activityDate <= :toDate)
         GROUP BY o.id, o.firstName, o.lastName
         ORDER BY o.lastName, o.firstName
     """)
@@ -133,8 +133,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
              WHERE op.id = :operatorId
           ))
           AND (:activityId IS NULL OR a.id = :activityId)
-          AND (:fromDate IS NULL OR r.activityDate >= :fromDate)
-          AND (:toDate IS NULL OR r.activityDate <= :toDate)
+          AND (CAST(:fromDate AS date) IS NULL OR r.activityDate >= :fromDate)
+          AND (CAST(:toDate AS date) IS NULL OR r.activityDate <= :toDate)
         GROUP BY a.id, a.name
         ORDER BY a.name
     """)
@@ -171,8 +171,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
               FROM r.activities a
               WHERE a.id = :activityId
           ))
-          AND (:fromDate IS NULL OR r.activityDate >= :fromDate)
-          AND (:toDate IS NULL OR r.activityDate <= :toDate)
+          AND (CAST(:fromDate as date) IS NULL OR r.activityDate >= :fromDate)
+          AND (CAST(:toDate AS date) IS NULL OR r.activityDate <= :toDate)
     """)
     long countFiltered(
             @Param("projectId") Integer projectId,
@@ -198,8 +198,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
               FROM r.activities a
               WHERE a.id = :activityId
           ))
-          AND (:fromDate IS NULL OR r.activityDate >= :fromDate)
-          AND (:toDate IS NULL OR r.activityDate <= :toDate)
+          AND (CAST(:fromDate AS date) IS NULL OR r.activityDate >= :fromDate)
+          AND (CAST(:toDate AS date) IS NULL OR r.activityDate <= :toDate)
     """)
     long sumDurationMinutesFiltered(
             @Param("projectId") Integer projectId,
