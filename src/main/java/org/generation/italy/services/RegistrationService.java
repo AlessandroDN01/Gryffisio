@@ -90,10 +90,7 @@ public class RegistrationService {
             int size
     ) {
         validateFilters(fromDate, toDate, page, size);
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(
-                Sort.Order.desc("activityDate"),
-                Sort.Order.desc("id")
-        ));
+        PageRequest pageable = PageRequest.of(page, size);
         Page<Registration> filteredPage = registrationRepository.findFiltered(
                 projectId, fromDate, toDate, operatorId, activityId, domainId, search, pageable);
 

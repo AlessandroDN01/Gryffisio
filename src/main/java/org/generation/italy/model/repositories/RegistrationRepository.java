@@ -36,52 +36,54 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     })
     List<Registration> findAllByOrderByIdAsc();
     @Query("""
-        SELECT r
-        FROM Registration r
-        WHERE (:projectId IS NULL OR r.project.id = :projectId)
-          AND r.activityDate >= COALESCE(:fromDate, r.activityDate)
-          AND r.activityDate <= COALESCE(:toDate, r.activityDate)
-          AND (:domainId IS NULL OR r.domain.id = :domainId)
-          AND (:operatorId IS NULL OR EXISTS (
-              SELECT op
-              FROM r.operators op
-              WHERE op.id = :operatorId
-           ))
-          AND (:activityId IS NULL OR EXISTS (
-              SELECT a
-              FROM r.activities a
-              WHERE a.id = :activityId
-           ))
-               AND (
-                    :search IS NULL
-                    OR LOWER(r.project.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
-                    OR LOWER(r.domain.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
-                    OR LOWER(r.session.session) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
-                    OR LOWER(CONCAT(r.doctor.firstName, ' ', r.doctor.lastName))
-                       LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
-                    OR EXISTS (
-                        SELECT opSearch
-                        FROM r.operators opSearch
-                        WHERE LOWER(CONCAT(opSearch.firstName, ' ', opSearch.lastName))
-                              LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
-                    )
-                    OR EXISTS (
-                        SELECT subSearch
-                        FROM r.subjects subSearch
-                        WHERE CAST(subSearch.id AS string)
-                              LIKE CONCAT('%', CAST(:search AS string), '%')
-                    )
+    SELECT r
+    FROM Registration r
+    LEFT JOIN r.doctor doc
+    WHERE (:projectId IS NULL OR r.project.id = :projectId)
+      AND r.activityDate >= COALESCE(:fromDate, r.activityDate)
+      AND r.activityDate <= COALESCE(:toDate, r.activityDate)
+      AND (:domainId IS NULL OR r.domain.id = :domainId)
+      AND (:operatorId IS NULL OR EXISTS (
+          SELECT op
+          FROM r.operators op
+          WHERE op.id = :operatorId
+       ))
+      AND (:activityId IS NULL OR EXISTS (
+          SELECT a
+          FROM r.activities a
+          WHERE a.id = :activityId
+       ))
+           AND (
+                :search IS NULL
+                OR LOWER(r.project.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(r.domain.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(r.session.session) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR (doc IS NOT NULL AND LOWER(CONCAT(doc.firstName, ' ', doc.lastName))
+                   LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+                OR EXISTS (
+                    SELECT opSearch
+                    FROM r.operators opSearch
+                    WHERE LOWER(CONCAT(opSearch.firstName, ' ', opSearch.lastName))
+                          LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 )
-    """)
+                OR EXISTS (
+                    SELECT subSearch
+                    FROM r.subjects subSearch
+                    WHERE CAST(subSearch.id AS string)
+                          LIKE CONCAT('%', CAST(:search AS string), '%')
+                )
+            )
+    ORDER BY r.activityDate DESC, r.id DESC
+""")
     Page<Registration> findFiltered(
-           @Param("projectId") Integer projectId,
-           @Param("fromDate") LocalDate fromDate,
-           @Param("toDate") LocalDate toDate,
-           @Param("operatorId") Integer operatorId,
-           @Param("activityId") Integer activityId,
-           @Param("domainId") Integer domainId,
-           @Param("search") String search,
-           Pageable pageable
+            @Param("projectId") Integer projectId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("operatorId") Integer operatorId,
+            @Param("activityId") Integer activityId,
+            @Param("domainId") Integer domainId,
+            @Param("search") String search,
+            Pageable pageable
     );
 
     @Query("""
